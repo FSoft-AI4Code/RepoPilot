@@ -49,9 +49,11 @@ def search_preliminary_inside_project(names, repo_path, num_result=2, verbose=Fa
             idx = 0
             for definition in class_definitions:
                 if definition.is_definition():
+                    rel_path = os.path.relpath(definition.module_path, repo_path)
                     extracted_definition = {
                         "name": definition.name,
                         "full_name": definition.full_name,
+                        "relative_path": rel_path,
                         "documentation": definition._get_docstring(),
                         "implementation": get_code_jedi(definition, verbose)
                     }
@@ -63,9 +65,11 @@ def search_preliminary_inside_project(names, repo_path, num_result=2, verbose=Fa
             idx = 0
             for definition in function_definitions:
                 if definition.is_definition():
+                    rel_path = os.path.relpath(definition.module_path, repo_path)
                     extracted_definition = {
                         "name": definition.name,
                         "full_name": definition.full_name,
+                        "relative_path": rel_path,
                         "documentation": definition._get_docstring(),
                         "implementation": get_code_jedi(definition, verbose),
                     }
@@ -76,9 +80,11 @@ def search_preliminary_inside_project(names, repo_path, num_result=2, verbose=Fa
             
             idx = 0
             for definition in variable_definitions:
+                rel_path = os.path.relpath(definition.module_path, repo_path)
                 extracted_definition = {
                     "name": definition.name,
                     "full_name": definition.full_name,
+                    "relative_path": rel_path,
                     "documentation": None,
                     "implementation": definition.description,
                 }
@@ -199,7 +205,7 @@ class FindAllReferencesTool(BaseTool):
         return [item["content"] for item in results[:5]]
     
     def similarity(self, query, implementation):
-        embed_query = np.array(self.openai_engine.create(input=query, model="text-embedding-ada-002"))
+        embed_query = np.array(self.openai_engine.embeddings.create(input = [query], model=model)['data'][0]['embedding'])
         embed_implementation = np.array(self.openai_engine.create(input=implementation, model="text-embedding-ada-002"))
         score = np.dot(embed_query, embed_implementation) / (np.linalg.norm(embed_query) * np.linalg.norm(embed_implementation))
         return score
